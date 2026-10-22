@@ -14,6 +14,17 @@ def extract_text_from_pdf(pdf_path):
     Returns:
         str: The extracted text content from the PDF.
     """
+    import os
+
+print("DEBUG file exists:", os.path.exists("./resume.pdf"))
+
+if os.path.exists("./resume.pdf"):
+    with open("./resume.pdf", "rb") as f:
+        header = f.read(20)
+
+    print("DEBUG file size:", os.path.getsize("./resume.pdf"))
+    print("DEBUG file header:", repr(header))
+    
     print(f"Extracting text from: {pdf_path}")
     text = ""
     with pdfplumber.open(pdf_path) as pdf:
