@@ -14,7 +14,8 @@ def extract_text_from_pdf(pdf_path):
     Returns:
         str: The extracted text content from the PDF.
     """
-    import os
+      return text
+  import os
 
 print("DEBUG file exists:", os.path.exists("./resume.pdf"))
 
@@ -40,7 +41,7 @@ if os.path.exists("./resume.pdf"):
                     uri = link.get("uri")
                     if uri:
                         text += f"Embedded Link: {uri}\n"
-    return text
+
 
 def parse_resume_with_ai(resume_text):
     """
