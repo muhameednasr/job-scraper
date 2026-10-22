@@ -4,6 +4,7 @@ import json
 import models
 from llm_client import primary_client
 
+
 def extract_text_from_pdf(pdf_path):
     """
     Extracts text from a given PDF file.
@@ -14,52 +15,47 @@ def extract_text_from_pdf(pdf_path):
     Returns:
         str: The extracted text content from the PDF.
     """
-      return text
-  import os
+    try:
+        text = ""
+        print(f"Extracting text from: {pdf_path}")
 
-print("DEBUG file exists:", os.path.exists("./resume.pdf"))
+        with pdfplumber.open(pdf_path) as pdf:
+            for page in pdf.pages:
+                # Extract the visible text
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
 
-if os.path.exists("./resume.pdf"):
-    with open("./resume.pdf", "rb") as f:
-        header = f.read(20)
+                # Extract embedded hyperlinks which are not captured by extract_text()
+                if page.hyperlinks:
+                    for link in page.hyperlinks:
+                        uri = link.get("uri")
+                        if uri:
+                            text += f"Embedded Link: {uri}\n"
 
-    print("DEBUG file size:", os.path.getsize("./resume.pdf"))
-    print("DEBUG file header:", repr(header))
-    
-    print(f"Extracting text from: {pdf_path}")
-    text = ""
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            # Extract the visible text
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text + "\n"
-            
-            # Extract embedded hyperlinks which are not captured by extract_text()
-            if page.hyperlinks:
-                for link in page.hyperlinks:
-                    uri = link.get("uri")
-                    if uri:
-                        text += f"Embedded Link: {uri}\n"
+        return text
+    except Exception as e:
+        print(f"Error extracting text from PDF: {e}")
+        return ""
 
 
 def parse_resume_with_ai(resume_text):
     """
     Send resume text to an AI model and get structured information back.
-    
+
     Args:
         resume_text (str): The plain text extracted from the resume
-        
+
     Returns:
         str: JSON string of structured resume information
     """
     print("Processing resume with AI model...")
 
-    prompt = f"""Extract and return the structured resume information from the text below. 
+    prompt = f"""Extract and return the structured resume information from the text below.
     Only use what is explicitly stated in the text and do not infer or invent any details.
-    
-    CRITICAL: If any information is missing or not available in the text, use "NA" for that field. 
-    This applies to all fields (e.g., summary, dates, location, links, etc.). 
+
+    CRITICAL: If any information is missing or not available in the text, use "NA" for that field.
+    This applies to all fields (e.g., summary, dates, location, links, etc.).
     Do NOT leave fields empty or use empty strings.
 
     Resume text:
@@ -72,10 +68,11 @@ def parse_resume_with_ai(resume_text):
     )
     return response_text
 
+
 def main():
     """
     Main function to orchestrate the resume parsing process.
-    Downloads the resume PDF from Supabase Storage, parses it with AI, 
+    Downloads the resume PDF from Supabase Storage, parses it with AI,
     and saves the structured data to both local file and Supabase DB.
     """
     import io
@@ -114,13 +111,13 @@ def main():
     try:
         # Convert the JSON string response to a dictionary
         resume_data_dict = json.loads(parsed_resume_details_str)
-        
+
         # Recursive function to replace empty values or None with "NA"
         def replace_empty_with_na(data):
             if isinstance(data, dict):
                 return {k: replace_empty_with_na(v) for k, v in data.items()}
             elif isinstance(data, list):
-                return[replace_empty_with_na(i) for i in data]
+                return [replace_empty_with_na(i) for i in data]
             elif data == "" or data is None:
                 return "NA"
             return data
